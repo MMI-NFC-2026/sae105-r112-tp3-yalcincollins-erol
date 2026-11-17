@@ -1,16 +1,36 @@
 // *** CAROUSEL ***
 
+const getScrollStep = (carousel) => {
+  const firstItem = carousel.querySelector('.carousel__item');
+  const style = window.getComputedStyle(carousel);
+  const gap = Number.parseFloat(style.columnGap || style.gap || '0') || 0;
+
+  return firstItem ? firstItem.getBoundingClientRect().width + gap : 260;
+};
+
+const getItemIndexFromScroll = (carousel, items) => {
+  const scrollStep = getScrollStep(carousel);
+
+  return items.findIndex((item) => {
+    const itemPosition = item.offsetLeft;
+    const itemEnd = itemPosition + scrollStep;
+
+    return carousel.scrollLeft >= itemPosition && carousel.scrollLeft < itemEnd;
+  });
+};
+
 const initCarousel = () => {
   const carousel = document.querySelector('.carousel__container');
   const prevButton = document.querySelector('.carousel__button--prev');
   const nextButton = document.querySelector('.carousel__button--next');
-  const firstItem = document.querySelector('.carousel__item');
-  const scrollAmount = firstItem ? firstItem.clientWidth : 260;
   const anchorLinks = document.querySelectorAll('.carousel__anchor');
+  const items = [...document.querySelectorAll('.carousel__item')];
 
   if (!carousel) {
     return;
   }
+
+  const scrollAmount = getScrollStep(carousel);
 
   prevButton?.addEventListener('click', () => {
     carousel.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
@@ -30,16 +50,15 @@ const initCarousel = () => {
       }
 
       event.preventDefault();
-      target.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+      carousel.scrollTo({ left: target.offsetLeft, behavior: 'smooth' });
     });
   });
 
   const updateActiveAnchor = () => {
-    const currentIndex = Math.round(carousel.scrollLeft / scrollAmount);
+    const currentIndex = getItemIndexFromScroll(carousel, items);
 
     anchorLinks.forEach((link, index) => {
-      const isActive = index === currentIndex;
-      link.classList.toggle('is-active', isActive);
+      link.classList.toggle('is-active', index === currentIndex);
     });
   };
 
