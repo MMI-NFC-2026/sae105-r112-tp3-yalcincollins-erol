@@ -1,22 +1,26 @@
 // *** CAROUSEL ***
 
-const getScrollStep = (carousel) => {
-  const firstItem = carousel.querySelector('.carousel__item');
-  const style = window.getComputedStyle(carousel);
-  const gap = Number.parseFloat(style.columnGap || style.gap || '0') || 0;
+const getItemScrollPosition = (carousel, item) => {
+  const carouselRect = carousel.getBoundingClientRect();
+  const itemRect = item.getBoundingClientRect();
 
-  return firstItem ? firstItem.getBoundingClientRect().width + gap : 260;
+  return carousel.scrollLeft + itemRect.left - carouselRect.left - carousel.clientLeft;
 };
 
-const getItemIndexFromScroll = (carousel, items) => {
-  const scrollStep = getScrollStep(carousel);
+const getNearestItemIndex = (carousel, items) => {
+  let nearestIndex = 0;
+  let nearestDistance = Number.POSITIVE_INFINITY;
 
-  return items.findIndex((item) => {
-    const itemPosition = item.offsetLeft;
-    const itemEnd = itemPosition + scrollStep;
+  items.forEach((item, index) => {
+    const distance = Math.abs(getItemScrollPosition(carousel, item) - carousel.scrollLeft);
 
-    return carousel.scrollLeft >= itemPosition && carousel.scrollLeft < itemEnd;
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearestIndex = index;
+    }
   });
+
+  return nearestIndex;
 };
 
 const initCarousel = () => {
@@ -30,32 +34,42 @@ const initCarousel = () => {
     return;
   }
 
-  const scrollAmount = getScrollStep(carousel);
+  const scrollToItem = (index) => {
+    const target = items[index];
+
+    if (target) {
+      carousel.scrollTo({
+        left: getItemScrollPosition(carousel, target),
+        behavior: 'smooth',
+      });
+    }
+  };
 
   prevButton?.addEventListener('click', () => {
-    carousel.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    scrollToItem(Math.max(0, getNearestItemIndex(carousel, items) - 1));
   });
 
   nextButton?.addEventListener('click', () => {
-    carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    if (items.length > 0) {
+      scrollToItem((getNearestItemIndex(carousel, items) + 1) % items.length);
+    }
   });
 
-  anchorLinks.forEach((link) => {
+  anchorLinks.forEach((link, index) => {
     link.addEventListener('click', (event) => {
-      const targetId = link.getAttribute('href');
-      const target = targetId ? document.querySelector(targetId) : null;
+      const target = items[index];
 
       if (!target) {
         return;
       }
 
       event.preventDefault();
-      carousel.scrollTo({ left: target.offsetLeft, behavior: 'smooth' });
+      scrollToItem(index);
     });
   });
 
   const updateActiveAnchor = () => {
-    const currentIndex = getItemIndexFromScroll(carousel, items);
+    const currentIndex = getNearestItemIndex(carousel, items);
 
     anchorLinks.forEach((link, index) => {
       link.classList.toggle('is-active', index === currentIndex);

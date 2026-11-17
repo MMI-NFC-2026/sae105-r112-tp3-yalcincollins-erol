@@ -27,6 +27,7 @@ h1 {
 }
 
 .carousel {
+  --carousel-item-size: clamp(220px, 40vw, 260px);
   position: relative;
   max-width: 1100px;
   margin: 0 auto;
@@ -70,6 +71,7 @@ h1 {
   display: flex;
   gap: 16px;
   overflow-x: auto;
+  padding-right: max(0px, calc(100% - var(--carousel-item-size)));
   margin: 0 -24px;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
@@ -81,7 +83,7 @@ h1 {
 }
 
 .carousel__item {
-  flex: 0 0 clamp(220px, 40vw, 260px);
+  flex: 0 0 var(--carousel-item-size);
   scroll-snap-align: start;
 }
 
@@ -117,8 +119,12 @@ h1 {
 }
 
 @media (max-width: 640px) {
+  .carousel {
+    --carousel-item-size: 80vw;
+  }
+
   .carousel__item {
-    flex-basis: 80vw;
+    flex-basis: var(--carousel-item-size);
   }
 
   .carousel__controls {
